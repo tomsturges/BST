@@ -1,0 +1,26 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments (uv will put them under .venv)
+.venv/
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+
+# VS Code settings
+.vscode/
+.history/
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
