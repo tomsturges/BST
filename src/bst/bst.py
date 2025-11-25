@@ -6,57 +6,86 @@ from jaxtyping import Float, Int, Array, Complex, Num
 from jax.numpy.fft import fft, ifft
 Float2D = Float[Array, "x1 x2"]
 Complex1D = Complex[Array, "x1"]
-Array1D = Num[Array, "x1"]
-Array2D = Num[Array, "x1 x2"]
+Complex2D = Complex[Array, "x1 x2"]
+Real1D = Float[Array, "x1"] | Int[Array, "x1"]
 pi = jnp.pi
 exp = jnp.exp
+from typing import NamedTuple
 
-def generate_bst(p: Array1D, q: Array1D) -> Complex1D:
-    """
-    Compute a discrete approximation of the 1D continuous Fourier transform
-    using the Bluestein (chirp–z) algorithm. This involves embedding the linear convolution into a circular convolution by padding the arrays to a length twice that of the input.
+class BSTPlan(NamedTuple):
+    pre: Complex1D
+    post: Complex1D
+    kernel_fft: Complex1D
+    N: int
 
-    Important!
-    For this routine to faithfully calculate a discrete approximation to a continuous Fourier transform, then the following assumptions are made:
+def bst(t: Real1D, f: Real1D, a: Complex1D) -> Complex1D:
+    plan = _generate_plan(t, f)
+    return _execute_plan(plan, a)
 
-        1. A are the samples of the original function at grid points:
-        jnp.linspace(-Lp / 2, Lp / 2, len(a), endpoint=False)
-        2. The ouput samples are similarly:
-        jnp.linspace(-Lq / 2, Lq / 2, len(a), endpoint=False)
-    """
-
-    dp = jnp.mean(jnp.diff(p))
-    dq = jnp.mean(jnp.diff(q))
-    d = dp * dq
-    p0 = p[0]
-    q0 = q[0]
-    N = len(p)
+def _generate_plan(t: Real1D, f: Real1D) -> BSTPlan:
+    N = len(t)
+    if int(f.shape[0]) != int(N):
+        raise ValueError("t and f must have the same length for this bst implementation.")
+    
+    dt = jnp.mean(jnp.diff(t))
+    df = jnp.mean(jnp.diff(f))
+    d = dt * df
+    t0 = t[0]
+    f0 = f[0]
     n = jnp.arange(0, N)
-    q_ramp = exp(-1j * 2 * pi * q0 * (p - p0))
-    p_ramp = exp(-1j * 2 * pi * p0 * q)
+    f_ramp = exp(-1j * 2 * pi * f0 * (t - t0))
+    t_ramp = exp(-1j * 2 * pi * t0 * f)
     chirp = exp(-1j * pi * d * n**2)
     k = jnp.arange(2 * N)
     ak = jnp.where(k < N, k, k - 2 * N)
     kernel = exp(1j * pi * d * ak**2)
+    kernel_fft = fft(kernel)
+    pre = f_ramp * chirp
+    post = dt * t_ramp * chirp
 
-    @jax.jit
+    return BSTPlan(pre=pre, post=post, kernel_fft=kernel_fft, N=N)
+
+def _execute_plan(plan: BSTPlan, a: Complex1D) -> Complex1D:
+    N = plan.N
+    a_chirped = jnp.pad(a * plan.pre, (0, N))
+    conv = ifft(fft(a_chirped) * plan.kernel_fft)[:N]
+    return plan.post * conv
+
+def generate_bst(t: Real1D, f: Real1D):
+    plan = _generate_plan(t, f)
     def bst(a):
-        a_chirped = jnp.pad(a * q_ramp * chirp, (0, N))
-        conv = ifft(fft(a_chirped) * fft(kernel))[:N]
-        return dp * p_ramp * chirp * conv
-
+        return _execute_plan(plan, a)
     return bst
 
-def generate_bst2D(p1: Array1D, p2: Array1D, q1: Array1D, q2: Array1D):
-    bst1 = generate_bst(p1, q1)
-    bst2 = generate_bst(p2, q2)
+def ibst(t: Real1D, f: Real1D, A: Complex1D) -> Complex1D:
+    plan = _generate_plan(f, t)
+    return jnp.conj(_execute_plan(plan, jnp.conj(A)))
+
+def generate_ibst(t: Real1D, f: Real1D):
+    plan = _generate_plan(f, t)
+    def ibst(A):
+        return jnp.conj(_execute_plan(plan, jnp.conj(A)))
+    return ibst
+
+def bst2D(t1: Real1D, t2: Real1D, f1: Real1D, f2: Real1D, a: Complex2D):
+    op = generate_bst2D(t1, t2, f1, f2)
+    return op(a)
+
+def generate_bst2D(t1: Real1D, t2: Real1D, f1: Real1D, f2: Real1D):
+    bst1 = generate_bst(t1, f1)
+    bst2 = generate_bst(t2, f2)
     bst1_vm = jax.vmap(bst1, in_axes=1, out_axes=1)
     bst2_vm = jax.vmap(bst2, in_axes=0, out_axes=0)
 
-    @jax.jit
-    def bst2D(a2d: Array2D) -> Array2D:
-        temp = bst1_vm(a2d)
-        out  = bst2_vm(temp)
-        return out
+    def bst2D(a: Complex2D):
+        return bst2_vm(bst1_vm(a))
 
-    return bst2D
+    return bst2
+
+def generate_ibst2D(t1: Real1D, t2: Real1D, f1: Real1D, f2: Real1D):
+    bst2 = generate_bst2D(f1, f2, t1, t2)
+
+    def ibst2D(A: Complex2D):
+        return jnp.conj(bst2(jnp.conj(A)))
+
+    return ibst2D
