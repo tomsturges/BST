@@ -59,7 +59,9 @@ def generate_bst(t: Real1D, f: Real1D):
 
 def ibst(t: Real1D, f: Real1D, A: Complex1D) -> Complex1D:
     plan = _generate_plan(f, t)
-    return jnp.conj(_execute_plan(plan, jnp.conj(A)))
+    dt = jnp.mean(jnp.diff(t))
+    df = jnp.mean(jnp.diff(f))
+    return jnp.conj(_execute_plan(plan, jnp.conj(A))) * dt / df
 
 def generate_ibst(t: Real1D, f: Real1D):
     plan = _generate_plan(f, t)
@@ -80,7 +82,7 @@ def generate_bst2D(t1: Real1D, t2: Real1D, f1: Real1D, f2: Real1D):
     def bst2D(a: Complex2D):
         return bst2_vm(bst1_vm(a))
 
-    return bst2
+    return bst2D
 
 def generate_ibst2D(t1: Real1D, t2: Real1D, f1: Real1D, f2: Real1D):
     bst2 = generate_bst2D(f1, f2, t1, t2)

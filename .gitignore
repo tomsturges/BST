@@ -15,8 +15,9 @@ build/
 .vscode/
 .history/
 
-# Jupyter notebook checkpoints
+# Jupyter notebook
 .ipynb_checkpoints/
+*.ipynb
 
 # Logs
 *.log
@@ -24,3 +25,7 @@ build/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Specific files
+important.py
+plotly.py
