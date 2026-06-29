@@ -19,10 +19,49 @@ class BSTPlan(NamedTuple):
     N: int
 
 def bst(t: Real1D, f: Real1D, a: Complex1D) -> Complex1D:
+    r"""
+    Approximate the continuous Fourier transform on an arbitrary uniform grid.
+
+    This evaluates the quadrature approximation
+
+    $$
+    A(f_m) \approx \Delta t \sum_n a(t_n)
+    \exp(-i 2\pi f_m t_n)
+    $$
+
+    using a Bailey--Swarztrauber / Bluestein chirp-convolution algorithm.
+
+    Parameters
+    ----------
+    t
+        Uniformly spaced input coordinates.
+    f
+        Uniformly spaced output frequency coordinates.
+    a
+        Samples of the input function on `t`.
+
+    Returns
+    -------
+    Complex1D
+        Approximate continuous Fourier transform sampled on `f`.
+
+    See Also
+    --------
+    generate_bst : Precompute a reusable transform plan.
+    ibst : Approximate inverse continuous Fourier transform.
+
+    Notes
+    -----
+    The input and output coordinates must be uniformly spaced. Unlike the FFT-based
+    approximation, the output spacing does not need to satisfy ``df = 1 / (N * dt)``.
+    """
     plan = _generate_plan(t, f)
     return _execute_plan(plan, a)
 
 def _generate_plan(t: Real1D, f: Real1D) -> BSTPlan:
+    r"""
+    test docstirn
+    """
     N = len(t)
     if int(f.shape[0]) != int(N):
         raise ValueError("t and f must have the same length for this bst implementation.")
@@ -52,6 +91,9 @@ def _execute_plan(plan: BSTPlan, a: Complex1D) -> Complex1D:
     return plan.post * conv
 
 def generate_bst(t: Real1D, f: Real1D):
+    r"""
+    test docstirn
+    """
     plan = _generate_plan(t, f)
     def bst(a):
         return _execute_plan(plan, a)
