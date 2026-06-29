@@ -44,7 +44,7 @@ import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import ipywidgets as widgets
 from IPython.display import display
-from bst.core import generate_bst, ibst
+from bst.bst import generate_bst, ibst
 
 jax.config.update("jax_enable_x64", True)
 
