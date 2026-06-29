@@ -8,7 +8,7 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.19.1
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: .venv
 #     language: python
 #     name: python3
 # ---
@@ -44,7 +44,7 @@ import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import ipywidgets as widgets
 from IPython.display import display
-from bst.bst import generate_bst, ibst
+from bst.core import generate_bst, ibst
 
 jax.config.update("jax_enable_x64", True)
 
