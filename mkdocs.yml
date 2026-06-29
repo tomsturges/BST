@@ -1,0 +1,44 @@
+site_name: BST
+site_description: Bailey-Swarztrauber transform utilities for approximating continuous Fourier transforms
+site_author: Thomas J. Sturges
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+    - content.math.copy
+
+nav:
+  - Home: index.md
+  - Theory: theory.md
+  - Examples: examples.md
+  - API Reference: api.md
+
+plugins:
+  - search
+  - bibtex:
+      bib_file: references.bib
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: numpy
+            show_source: true
+            show_root_heading: true
+            show_signature_annotations: true
+            separate_signature: true
+
+markdown_extensions:
+  - footnotes
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.arithmatex:
+      generic: true
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
