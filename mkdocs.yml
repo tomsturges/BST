@@ -2,6 +2,9 @@ site_name: BST
 site_description: Bailey-Swarztrauber transform utilities for approximating continuous Fourier transforms
 site_author: Thomas J. Sturges
 
+extra_css:
+  - stylesheets/extra.css
+
 theme:
   name: material
   features:
@@ -12,7 +15,10 @@ theme:
 
 nav:
   - Home: index.md
-  - Theory: theory.md
+  - Theory:
+    - Conventions: conventions.md
+    - Approximation with DFT: theory_DFT.md
+    - Approximation with BST: theory_BST.md
   - Examples: examples.md
   - API Reference: api.md
 
