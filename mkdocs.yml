@@ -17,8 +17,9 @@ nav:
   - Home: index.md
   - Theory:
     - Conventions: conventions.md
-    - Approximation with DFT: theory_DFT.md
-    - Approximation with BST: theory_BST.md
+    - The fractional-DFT: theory_FRDFT.md
+    - Approximating continuous FT with DFT: theory_DFT.md
+    - Approximating continuous FT with fractional-DFT: theory_BST.md
   - Examples: examples.md
   - API Reference: api.md
 

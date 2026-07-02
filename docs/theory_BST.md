@@ -2,4 +2,60 @@ See the page [Conventions](conventions.md) for details on the notations used, th
 
 ## The objective
 
-Given a function $f(x)$ that is negligible outside the interval $(-L_x/2, L_x/2)$, we want to compute a numerical approximation to its exact continuous Fourier transform (CFT). Importantly, we want to be able to choose the output grid $\v{k}$ in reciprocal space independently from the input grid $\v{x}$ in direct space. As we saw in the previous [theory page](theory_DFT.md) this is not possible with the DFT which intrinsically links the input and output grids. In addition 
+Given a function $f(x)$ that is negligible outside the interval $(-L_x/2, L_x/2)$, we want to compute a numerical approximation to its exact continuous Fourier transform (CFT). Importantly, we want to be able to choose the output grid $\v{k}$ in reciprocal space independently from the input grid $\v{x}$ in direct space. As we saw in the previous [theory page](theory_DFT.md) this is not possible with the DFT, which intrinsically links the input and output grids. In addition we would like the algorithm to be reasonably fast, with the same computational complexity as the FFT.
+
+## Approximating the CFT with the fractional-DFT
+
+Our derivation begins exactly the same as [equation 1 from the DFT theory page](theory_DFT.md#eqn-truncation-and-riemann). That is, we define an input grid $\v{x}[n] = (n - c)\delta_x$ and an output grid $\v{k}[n] = (n - c)\delta_k$, where $c = \lfloor N / 2 \rfloor$ is the central index of the grids with length $N$. Truncating the integral within the CFT to $(-L_x/2, L_x/2)$ and replacing the integral with a Riemann sum allows us to approximate the CFT as
+
+$$
+\begin{equation}
+\label{eqn:start}
+\v{F}[m] \approx \tilde{\v{F}}[m] = \delta_x \sum_{n=0}^{N-1} \v{f}[n] \exp(-i2\pi \v{k}[m] \v{x}[n]),
+\end{equation}
+$$
+
+where $\v{F} = F(\v{k})$ is the vector of samles of the *exact* CFT, and $\tilde{\v{F}}$ is the approximation. Now the difference to the DFT approach enters. To use a single DFT to approximate the CFT one *must* fix the grid spacing in reciprocal space to be the reciprocal of the input sample length, i.e. $\delta_k = 1 / L_x$. However, we want the freedom to choose the output sampling freely. Therefore we leave $\delta_k$ as a free parameter. Substituting $\v{k}$ and $\v{x}$ into equation \eqref{eqn:start} gives
+
+$$
+\begin{equation}
+\label{eqn:pre_FRDFT}
+\tilde{\v{F}}[m] = \delta_x \exp\left(i 2 \pi \delta(c m - c^2) \right) \sum_n \left[\v{f}[n] \exp( i 2 \pi \delta cn) \right] \exp(-i 2 \pi \delta mn),
+\end{equation}
+$$
+
+where we define $\delta = \delta_k \delta_x$ for convenience. To proceed further, we can note that the sum in equation \eqref{eqn:pre_FRDFT} looks somewhat like a DFT of the term in square brackets. If we were to replace $\delta$ with $1/N$ than this would be exactly a DFT. For this reason, we can think of this sum as some kind of *fractional* DFT. This terminology was introduced by D. H. Bailey and P. N. Swarztrauber [@BaileySwarztrauber1991; @BaileySwarztrauber1994] and is discussed in detail in the corresponding [theory page](theory_FRDFT.md). The fractional-DFT is defined as
+
+$$
+\begin{equation}
+\label{eqn:define-frdft}
+\v{G}_\alpha[m] = \text{frdft}_\alpha(\v{g})[m] = \sum_{n=0}^{N-1} \v{g}[n] \exp(- i 2\pi \alpha m n).
+\end{equation}
+$$
+
+The fractional-DFT can be calculated efficiently as
+
+$$
+\begin{equation}
+    \v{G}_\alpha[m] = \theta_{m,\alpha}^* \text{ifft} \big( \text{fft}(\v{Y}_\alpha) \cdot \text{fft}(\v{Z}_\alpha) \big)[m] \quad \text{for} \quad 0 \leq m < N, 
+\end{equation}
+$$
+
+where $\theta_{n,\alpha}=\exp(i \pi \alpha n^2)$ is a phase factor, $\v{Y}_\alpha$ is a zero-padded version of $\v{g}$ multiplied by the conjugated phase factor, and $\v{Z}_\alpha$ is an extended and wrapped-around version of the phase factor. Please see the [corresponding page](theory_FRDFT.md) for the full definitions. The key point here is that these new arrays are twice the length of the original ones. 
+
+Using the definition of the fractional-DFT we can rewrite equation \eqref{eqn:pre_FRDFT} as 
+
+!!! success "Final result"
+
+    $$
+    \begin{equation}
+    \label{eqn:final}
+    \tilde{\v{F}} = \delta_x \exp\big( i 2 \pi \delta (c \v{m} - c^2) \big) \text{frdft}\Big( \v{f} \cdot \exp( i 2 \pi \delta c \v{n}) \Big),
+    \end{equation}
+    $$
+
+where $\v{n}$ is the vectorised version of the integer indices and element-wise multiplication is implied.
+
+## Computational cost
+
+In our implementation, computing equation \eqref{eqn:final} requires two forward FFTs and one inverse FFT, each acting on vectors of length $2N$, where $N$ is the number of input samples. Therefore the computational complexity is the same as an FFT, although with a larger constant prefactor. When the FFT of the convolution kernel is precomputed, each subsequent evaluation requires only one forward FFT and one inverse FFT of length $2N$, giving an asymptotic arithmetic cost of approximately four times that of an $N$-point FFT.

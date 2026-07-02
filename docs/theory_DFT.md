@@ -26,6 +26,8 @@ $$
 
 where the centred grid $\v{x}$ is defined by its components $\v{x}[n] = (n - c)\delta_x$, with the central index $c = \lfloor N/2 \rfloor$ and the spacing $\delta_x = L_x / N$. To proceed with approximating the CFT we also need to define the output grid $\v{k}$ defined by its components $\v{k}[n] = (n - c) \delta_k$. Putting everything together we can approximate the CFT as
 
+<a id="eqn-truncation-and-riemann"></a>
+
 $$
 \begin{align}
 \v{F}[m] \equiv F(k_m) &= \hat{\mathcal{F}}_x[f(x)](k_m) = \left. \int_{-\infty}^\infty f(x)\exp(-i 2\pi \xi x) \d x \right|_{\xi = k_m},\notag\\
